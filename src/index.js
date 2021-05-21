@@ -3,28 +3,28 @@ import {
   Scene,
   WebGLRenderer,
   MeshBasicMaterial,
-  PlaneGeometry,
+  MeshPhongMaterial,
   DoubleSide,
   // BackSide,
-  MeshPhongMaterial,
   Mesh,
   Color,
+  PlaneGeometry,
   SphereBufferGeometry,
   // HemisphereLight,
   DirectionalLight,
   TextureLoader
 } from "three";
-// import OrbitControls from "three-orbitcontrols";
+import OrbitControls from "three-orbitcontrols";
 
 let container;
 let scene;
 let camera;
 let renderer;
-// let controls;
+let controls;
 let mesh;
 let clouds;
 
-async function init() {
+function init() {
   container = document.querySelector("#container");
   scene = new Scene();
   scene.background = new Color("black");
@@ -32,9 +32,9 @@ async function init() {
   createLights();
   createCamera();
   createRenderer();
-  await createPlanet();
+  createPlanet();
 
-  // createControls();
+  createControls();
 
   renderer.setAnimationLoop(() => {
     update();
@@ -46,7 +46,6 @@ function createRenderer() {
   renderer = new WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.gammaOutput = true;
   renderer.physicallyCorrectLights = true;
 
   container.appendChild(renderer.domElement);
@@ -73,13 +72,14 @@ function createLights() {
 async function createPlanet() {
   const sphere = new SphereBufferGeometry(1, 32, 32);
   const materials = new MeshPhongMaterial();
-  materials.map = await loadTexture(`src/textures/Map_Altiplano2.jpg`);
-  materials.specularMap = await loadTexture(
-    `src/textures/specular-altiplano.png`
+  materials.map = new TextureLoader().load(`textures/Map_Altiplano2.jpg`);
+  // console.log(materials)
+  materials.specularMap = new TextureLoader().load(
+    `textures/specular-altiplano.png`
   );
   materials.specular = new Color("#333333");
-  materials.bumpMap = await loadTexture(`src/textures/AmbientOcclusionMap.png`);
-  materials.bumpScale = 0.002;
+  // materials.bumpMap = new TextureLoader().load(`textures/AmbientOcclusionMap.png`);
+  // materials.bumpScale = 0.002;
   mesh = new Mesh(sphere, materials);
 
   const cloudGeometry = new SphereBufferGeometry(1.01, 32, 32);
@@ -89,30 +89,22 @@ async function createPlanet() {
     transparent: true,
     depthWrite: true
   });
-  cloudMaterial.map = await loadTexture(`src/textures/clouds-trans.png`);
+  cloudMaterial.map = new TextureLoader().load(`textures/clouds-trans.png`);
   clouds = new Mesh(cloudGeometry, cloudMaterial);
   mesh.add(clouds);
-  // // create the geometry sphere
   const starGeometry = new PlaneGeometry(15, 6.5);
-  // // // create the material, using a texture of startfield
-  const starFieldMaterial = new MeshBasicMaterial();
-  starFieldMaterial.map = await loadTexture("src/textures/starfield_alpha.png");
-  // starFieldMaterial.side = BackSide;
-  // // // create the mesh based on geometry and material
+  const starTexture = new TextureLoader().load( 'textures/starfield_alpha.png' );
+  const starFieldMaterial = new MeshBasicMaterial( { map: starTexture } );
   const starMesh = new Mesh(starGeometry, starFieldMaterial);
   starMesh.position.z = -5;
   scene.add(starMesh);
   scene.add(mesh);
 }
 
-// function createControls() {
-//   controls = new OrbitControls(camera, renderer.domElement);
-// }
-
-function loadTexture(url) {
-  const loader = new TextureLoader();
-  return new Promise((resolve) => loader.load(url, resolve));
+function createControls() {
+  controls = new OrbitControls(camera, renderer.domElement);
 }
+
 
 function update() {
   mesh.rotation.y += 0.001;
